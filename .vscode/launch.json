@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:AdobePodcastsWrapper}",
+            "name": "Debug AdobeEnhancer",
+            "target": "AdobeEnhancer",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug AdobeEnhancer"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:AdobePodcastsWrapper}",
+            "name": "Release AdobeEnhancer",
+            "target": "AdobeEnhancer",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release AdobeEnhancer"
+        }
+    ]
+}

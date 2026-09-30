@@ -1,0 +1,80 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mock Enhance</title>
+<!--
+  Stand-in for podcast.adobe.com/en/enhance, used to exercise the injected
+  automation without spending a real Adobe conversion. It mimics the parts the
+  driver depends on: a hidden file input behind a dotted dropzone, an ARIA
+  progressbar, and a Download button that hands back a blob: URL.
+
+    python3 -m http.server 8765 --directory Tests/MockEnhancePage
+    ENHANCER_PAGE=http://127.0.0.1:8765/ open build/Enhance.app
+-->
+<style>
+  body { font: 15px -apple-system, sans-serif; padding: 40px; }
+  #zone { border: 2px dashed #999; border-radius: 12px; padding: 60px; text-align: center; }
+  input[type=file] { display: none; }
+  #status { margin-top: 24px; }
+  button { font-size: 15px; padding: 8px 16px; }
+</style>
+
+<div data-testid="user-profile-dropdown-button" hidden>signed in</div>
+
+<div id="zone" data-testid="dotted-border">
+  Drag &amp; drop your audio here
+  <input type="file" accept=".mp3,.wav,.aac,.flac,.oga,.ogg,.m4a">
+</div>
+
+<div id="status"></div>
+
+<script>
+const input = document.querySelector('input[type=file]');
+const status = document.getElementById('status');
+let received = null;
+
+input.addEventListener('change', () => {
+  const file = input.files[0];
+  if (!file) return;
+  start(file);
+});
+document.getElementById('zone').addEventListener('drop', (ev) => {
+  ev.preventDefault();
+  const file = ev.dataTransfer && ev.dataTransfer.files[0];
+  if (file) start(file);
+});
+['dragenter', 'dragover'].forEach((t) =>
+  document.getElementById('zone').addEventListener(t, (e) => e.preventDefault()));
+
+function start(file) {
+  received = file;
+  status.innerHTML =
+    '<div>Enhancing ' + file.name + ' (' + file.size + ' bytes)</div>' +
+    '<div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>';
+  const bar = status.querySelector('[role=progressbar]');
+  let value = 0;
+  const timer = setInterval(() => {
+    value += 12;
+    bar.setAttribute('aria-valuenow', String(Math.min(100, value)));
+    bar.textContent = Math.min(100, value) + '%';
+    if (value >= 100) {
+      clearInterval(timer);
+      showDownload();
+    }
+  }, 400);
+}
+
+// The real site produces the enhanced file as a blob and clicks a hidden
+// <a download>; reproduce that shape, including the format menu.
+function showDownload() {
+  status.insertAdjacentHTML('beforeend',
+    '<p><button id="dl">Download</button></p>' +
+    '<p><button id="premium">Download the desktop app</button></p>');
+  document.getElementById('dl').addEventListener('click', () => {
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(new Blob([received], { type: 'audio/wav' }));
+    anchor.download = received.name.replace(/\.[^.]+$/, '') + '_enhanced.wav';
+    document.body.appendChild(anchor);
+    anchor.click();
+  });
+}
+</script>
